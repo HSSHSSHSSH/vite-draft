@@ -15,5 +15,4 @@ export function resolvePlugins(): Plugin[] {
     cssPlugin(),
     assetPlugin()
   ]
-  // return []
 }

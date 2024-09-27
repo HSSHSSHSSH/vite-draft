@@ -4,6 +4,7 @@ import { ServerContext } from './server'
 import {blue, green} from 'picocolors'
 import {getShortName, normalizePath} from './utils'
 
+// 当文件发生变化时，触发 HMR，通过 websocket 通知客户端
 export function bindingHMREvents(serverContext: ServerContext) {
   const {watcher, ws, root} = serverContext
   watcher.on("change",async (file) => {

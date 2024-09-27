@@ -446,15 +446,18 @@ function clientInjectPlugin() {
   let serverContext;
   return {
     name: "m-vite:client-inject",
+    // 配置服务器,保存服务器上下文
     configureServer(_s) {
       serverContext = _s;
     },
+    // 解析模块ID
     resolveId(id) {
       if (id === CLIENT_PUBLIC_PATH) {
         return { id };
       }
       return null;
     },
+    // 加载模块内容
     async load(id) {
       if (id === CLIENT_PUBLIC_PATH) {
         const realPath = path8.join(
@@ -470,6 +473,7 @@ function clientInjectPlugin() {
         };
       }
     },
+    // 转换 HTML 内容
     transformIndexHtml(raw) {
       return raw.replace(
         /(<head[^>]*>)/i,
@@ -502,7 +506,7 @@ var createPluginContainer = (plugins) => {
     }
   }
   const pluginContainer = {
-    // 依次调用 plugin 的 resolveId 方法，直到有返回值
+    // 解析模块 ID
     async resolveId(id, importer) {
       const ctx = new Context();
       for (const plugin of plugins) {
@@ -516,7 +520,7 @@ var createPluginContainer = (plugins) => {
       }
       return null;
     },
-    // 依次调用 plugin 的 load 方法，直到有返回值
+    // 加载模块内容
     async load(id) {
       const ctx = new Context();
       for (const plugin of plugins) {
@@ -528,7 +532,7 @@ var createPluginContainer = (plugins) => {
         }
       }
     },
-    // 依次调用 plugin 的 transform 方法，直到有返回值
+    // 转换模块代码
     async transform(code, id) {
       const ctx = new Context();
       for (const plugin of plugins) {
@@ -641,23 +645,34 @@ function staticMiddleware(root) {
 
 // src/node/moduleGraph.ts
 var ModuleNode = class {
+  // 最后一次热更新的时间戳
   constructor(url) {
     this.id = null;
     this.importers = /* @__PURE__ */ new Set();
-    // 依赖当前模块的模块
+    // 依赖当前模块的模块集合
     this.importedModules = /* @__PURE__ */ new Set();
-    // 当前模块依赖的模块
+    // 当前模块依赖的模块集合
     this.transformResult = null;
+    // 模块转换结果
     this.lastHMRTimestamp = 0;
     this.url = url;
   }
 };
 var ModuleGraph = class {
+  // ID 到 ModuleNode 的映射
+  /**
+   * 
+   * 使用 `private` 关键字意味着这个参数会自动成为类的私有属性。
+   * 这是 TypeScript 的一个简写语法
+   * 等同于在类中声明一个私有属性并在构造函数中赋值。
+   */
   constructor(resolveId) {
     this.resolveId = resolveId;
     this.urlToModuleMap = /* @__PURE__ */ new Map();
+    // URL 到 ModuleNode 的映射
     this.idToModuleMap = /* @__PURE__ */ new Map();
   }
+  // 解析模块 ID
   async _resolve(url) {
     const resolved = await this.resolveId(url);
     const resolvedId = resolved?.id || url;
@@ -666,13 +681,16 @@ var ModuleGraph = class {
       resolvedId
     };
   }
+  // 通过 ID 获取模块
   getModuleById(id) {
     return this.idToModuleMap.get(id);
   }
+  // 通过 URL 获取模块
   async getModuleByUrl(rawUrl) {
     const { url } = await this._resolve(rawUrl);
     return this.urlToModuleMap.get(url);
   }
+  // 确保 URL 对应的模块存在，如果不存在则创建
   async ensureEntryFromUrl(rawUrl) {
     const { url, resolvedId } = await this._resolve(rawUrl);
     if (this.urlToModuleMap.has(url)) {
@@ -684,7 +702,7 @@ var ModuleGraph = class {
     this.idToModuleMap.set(resolvedId, mod);
     return mod;
   }
-  // 更新模块信息
+  // 更新模块信息，包括导入的模块
   async updateModuleInfo(mod, importedModules) {
     const prevImports = mod.importedModules;
     for (const curImports of importedModules) {
@@ -700,6 +718,7 @@ var ModuleGraph = class {
       }
     }
   }
+  // 使模块失效，通常用于热更新
   invalidateModule(file) {
     const mod = this.idToModuleMap.get(file);
     if (mod) {
