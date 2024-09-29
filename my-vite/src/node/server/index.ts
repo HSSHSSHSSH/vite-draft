@@ -92,7 +92,7 @@ export async function startDevServer() {
   app.use(IndexHtmlMiddleware(serverContext))
   // 静态文件处理中间件
   app.use(staticMiddleware(serverContext.root))
-  
+  console.log('处理后的模块图', serverContext.moduleGraph)
   // 启动服务器
   app.listen(3000, async () => {
     // 执行预构建
