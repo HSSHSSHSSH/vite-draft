@@ -3,11 +3,13 @@ import {NextHandleFunction} from 'connect'
 import { ServerContext } from '../index'
 import path from 'path'
 import { pathExists, readFile } from 'fs-extra'
-
+import { yellow } from 'picocolors'
 export function IndexHtmlMiddleware(
   serverContext: ServerContext
 ): NextHandleFunction {
+  console.log('IndexHtmlMiddleware')
   return async (req, res, next) => {
+    console.log(yellow('IndexHtmlMiddleware trigger'), req.url)
     if(req.url === '/') {
       const {root} = serverContext
       const indexHtmlPath = path.join(root, 'index.html')

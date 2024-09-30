@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import logo from './logo.svg';
+import demo from './demo.png';
 
 const Sun = ({ isDay }) => (
   <div style={{
@@ -497,6 +499,7 @@ const Ground = () => (
 
 export default function EnhancedSkyArmyScene() {
   const [isDay, setIsDay] = useState(true);
+  const skyColor = isDay ? '#87CEEB' : '#191970';
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -505,9 +508,6 @@ export default function EnhancedSkyArmyScene() {
 
     return () => clearInterval(interval);
   }, []);
-
-  const skyColor = isDay ? '#87CEEB' : '#191970';
-  const groundColor = isDay ? '#8B4513' : '#3C280C';
 
   return (
     <div
@@ -520,6 +520,17 @@ export default function EnhancedSkyArmyScene() {
         transition: 'background-color 10s ease-in-out',
       }}
     >
+      {/* 添加 logo 和 demo 图片 */}
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        zIndex: 1000,
+      }}>
+        <img src={logo} alt="Logo" style={{ width: '50px', height: '50px', marginRight: '10px' }} />
+        {/* <img src={demo} alt="Demo" style={{ width: '50px', height: '50px' }} /> */}
+      </div>
+
       <Sun isDay={isDay} />
       <Moon isDay={isDay} />
       <Cloud top={10} left={10} scale={1.5} />

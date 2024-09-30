@@ -21,6 +21,7 @@ import {
 
 import { ServerContext } from '../index'
 import createDebug from 'debug'
+import { blackBright, bgBlue } from 'picocolors'
 
 // 创建调试器
 const debug = createDebug("dev")
@@ -69,7 +70,9 @@ export async function transformRequest (
 export function transformMiddleware(
   serverContext: ServerContext
 ): NextHandleFunction {
+  console.log('transformMiddleware')
   return async (req, res, next) => {
+    console.log(blackBright('transformMiddleware trigger'), req.url)
     if(req.method !== 'GET' || !req.url) {
       return next()
     }
@@ -89,6 +92,7 @@ export function transformMiddleware(
       // 设置响应头和内容
       res.statusCode = 200
       res.setHeader('Content-Type', 'application/javascript')
+      console.log(bgBlue('transformMiddleware end'), url)
       return res.end(result)
     }
     return next()
