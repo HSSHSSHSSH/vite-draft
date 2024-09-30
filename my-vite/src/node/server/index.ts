@@ -78,7 +78,7 @@ export async function startDevServer() {
   // 绑定 HMR 事件  当文件发生变化时，触发 HMR，通过 websocket 通知客户端
   bindingHMREvents(serverContext)
 
-  // 调用插件的 configureServer 钩子
+  // 调用插件的 configureServer 钩子，对需要使用 serverContext 的插件进行配置
   for (const plugin of plugins) {
     if (plugin.configureServer) {
       await plugin.configureServer(serverContext)

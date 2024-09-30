@@ -5,15 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "my-vite"
-  },
-  "devDependencies": {
-    "my-vite": "../"
+    "dev": "node ../bin/my-vite.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "my-vite": "file:..",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }

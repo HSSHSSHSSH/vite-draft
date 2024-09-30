@@ -13,12 +13,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Demo/>
   </React.StrictMode>,
 )
-import.meta.hot.accept(() => {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <App />
-      <Demo/>
-    </React.StrictMode>,
-  )
-})
+// import.meta.hot.accept(() => {
+//   ReactDOM.createRoot(document.getElementById('root')!).render(
+//     <React.StrictMode>
+//       <App />
+//       <Demo/>
+//     </React.StrictMode>,
+//   )
+// })
 
