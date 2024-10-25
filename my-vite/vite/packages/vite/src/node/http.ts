@@ -171,6 +171,7 @@ export async function httpServerStart(
     httpServer.on('error', onError)
 
     httpServer.listen(port, host, () => {
+      console.log('启动2')
       httpServer.removeListener('error', onError)
       resolve(port)
     })
