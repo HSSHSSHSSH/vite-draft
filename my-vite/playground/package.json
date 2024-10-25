@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node ../bin/my-vite.js"
+    "dev": "node ../bin/my-vite.js",
+    "dev-source": "node ../vite/packages/vite/bin/vite.js"
   },
   "keywords": [],
   "author": "",

@@ -113,7 +113,7 @@
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.3",
     "debug": "^4.3.7",
-    "dep-types": "link:./src/types",
+    "dep-types": "file:./src/types",
     "dotenv": "^16.4.5",
     "dotenv-expand": "^11.0.6",
     "es-module-lexer": "^1.5.4",
@@ -150,7 +150,7 @@
     "strip-literal": "^2.1.0",
     "tsconfck": "^3.1.4",
     "tslib": "^2.7.0",
-    "types": "link:./types",
+    "types": "file:./types",
     "ufo": "^1.5.4",
     "ws": "^8.18.0"
   },
