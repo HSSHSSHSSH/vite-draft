@@ -80,13 +80,17 @@ export function transformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // 保持命名函数。该名称在使用 `DEBUG=connect:dispatcher ...` 时在调试日志中可见
 
   // check if public dir is inside root dir
+  // 检查 public 目录是否在根目录内
   const { root, publicDir } = server.config
   const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
+  // 计算相对于根目录的 public 路径
   const publicPath = `${publicDir.slice(root.length)}/`
 
   return async function viteTransformMiddleware(req, res, next) {
+    // 获取默认的客户端环境实例
     const environment = server.environments.client
 
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
@@ -95,6 +99,7 @@ export function transformMiddleware(
 
     let url: string
     try {
+      // 处理 URL 编码和特殊字符
       url = decodeURI(removeTimestampQuery(req.url!)).replace(
         NULL_BYTE_PLACEHOLDER,
         '\0',
@@ -103,20 +108,24 @@ export function transformMiddleware(
       return next(e)
     }
 
+    // 移除查询参数获取干净的 URL
     const withoutQuery = cleanUrl(url)
 
     try {
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
+      // 由于我们生成了 source map 引用，在这里处理这些请求
       if (isSourceMap) {
         const depsOptimizer = environment.depsOptimizer
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
+          // 如果浏览器请求优化依赖的 source map，说明该依赖已经预打包并加载完成
           const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(path.resolve(server.config.root, url.slice(1)))
           try {
+            // 读取并解析 sourcemap 文件
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),
             ) as ExistingRawSourceMap
@@ -135,6 +144,8 @@ export function transformMiddleware(
             // Outdated source map request for optimized deps, this isn't an error
             // but part of the normal flow when re-optimizing after missing deps
             // Send back an empty source map so the browser doesn't issue warnings
+            // 过期的优化依赖 source map 请求，这不是错误，而是重新优化缺失依赖时的正常流程
+            // 返回空的 source map 以避免浏览器发出警告
             const dummySourceMap = {
               version: 3,
               file: sourcemapPath.replace(/\.map$/, ''),
@@ -149,6 +160,7 @@ export function transformMiddleware(
             })
           }
         } else {
+          // 处理非优化依赖的 sourcemap
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
           const map = (
             await environment.moduleGraph.getModuleByUrl(originalUrl)
@@ -163,10 +175,12 @@ export function transformMiddleware(
         }
       }
 
+      // 检查并警告 public 路径的使用
       if (publicDirInRoot && url.startsWith(publicPath)) {
         warnAboutExplicitPublicPathInUrl(url)
       }
 
+      // 检查文件访问权限
       if (
         (rawRE.test(url) || urlRE.test(url)) &&
         !ensureServingAccess(url, server, res, next)
@@ -174,6 +188,7 @@ export function transformMiddleware(
         return
       }
 
+      // 处理各种类型的请求
       if (
         isJSRequest(url) ||
         isImportRequest(url) ||
@@ -181,12 +196,15 @@ export function transformMiddleware(
         isHTMLProxy(url)
       ) {
         // strip ?import
+        // 移除 ?import 查询参数
         url = removeImportQuery(url)
         // Strip valid id prefix. This is prepended to resolved Ids that are
         // not valid browser import specifiers by the importAnalysis plugin.
+        // 移除有效的 id 前缀。这是由 importAnalysis 插件为不是有效浏览器导入说明符的已解析 Id 添加的
         url = unwrapId(url)
 
         // for CSS, we differentiate between normal CSS requests and imports
+        // 对于 CSS，我们区分普通 CSS 请求和导入
         if (isCSSRequest(url)) {
           if (
             req.headers.accept?.includes('text/css') &&
@@ -198,6 +216,8 @@ export function transformMiddleware(
           // check if we can return 304 early for CSS requests. These aren't handled
           // by the cachedTransformMiddleware due to the browser possibly mixing the
           // etags of direct and imported CSS
+          // 检查是否可以为 CSS 请求提前返回 304。这些请求不由 cachedTransformMiddleware 处理，
+          // 因为浏览器可能混合了直接和导入的 CSS 的 etags
           const ifNoneMatch = req.headers['if-none-match']
           if (
             ifNoneMatch &&
@@ -211,17 +231,21 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
+        // 使用插件容器解析、加载和转换
         const result = await transformRequest(environment, url, {
           html: req.headers.accept?.includes('text/html'),
         })
         if (result) {
           const depsOptimizer = environment.depsOptimizer
+          // 确定响应类型
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
+          // 检查是否为依赖请求
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
+            // 允许浏览器缓存 npm 依赖！
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
             map: result.map,
@@ -231,17 +255,20 @@ export function transformMiddleware(
     } catch (e) {
       if (e?.code === ERR_OPTIMIZE_DEPS_PROCESSING_ERROR) {
         // Skip if response has already been sent
+        // 如果响应已经发送则跳过
         if (!res.writableEnded) {
           res.statusCode = 504 // status code request timeout
           res.statusMessage = 'Optimize Deps Processing Error'
           res.end()
         }
         // This timeout is unexpected
+        // 这个超时是意外的
         server.config.logger.error(e.message)
         return
       }
       if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
         // Skip if response has already been sent
+        // 如果响应已经发送则跳过
         if (!res.writableEnded) {
           res.statusCode = 504 // status code request timeout
           res.statusMessage = 'Outdated Optimize Dep'
@@ -253,10 +280,14 @@ export function transformMiddleware(
         // A full-page reload has been issued, and these old requests
         // can't be properly fulfilled. This isn't an unexpected
         // error but a normal part of the missing deps discovery flow
+        // 在这种情况下我们不需要记录错误，请求过期是因为发现了新的依赖，
+        // 并且新的预打包依赖已经改变。已经触发了完整页面重载，
+        // 这些旧请求无法正确完成。这不是意外错误，而是缺失依赖发现流程的正常部分
         return
       }
       if (e?.code === ERR_CLOSED_SERVER) {
         // Skip if response has already been sent
+        // 如果响应已经发送则跳过
         if (!res.writableEnded) {
           res.statusCode = 504 // status code request timeout
           res.statusMessage = 'Outdated Request'
@@ -268,10 +299,14 @@ export function transformMiddleware(
         // A full-page reload has been issued, and these old requests
         // can't be properly fulfilled. This isn't an unexpected
         // error but a normal part of the missing deps discovery flow
+        // 在这种情况下我们不需要记录错误，请求过期是因为发现了新的依赖，
+        // 并且新的预打包依赖已经改变。已经触发了完整页面重载，
+        // 这些旧请求无法正确完成。这不是意外错误，而是缺失依赖发现流程的正常部分
         return
       }
       if (e?.code === ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR) {
         // Skip if response has already been sent
+        // 如果响应已经发送则跳过
         if (!res.writableEnded) {
           res.statusCode = 404
           res.end()
@@ -281,6 +316,7 @@ export function transformMiddleware(
       }
       if (e?.code === ERR_LOAD_URL) {
         // Let other middleware handle if we can't load the url via transformRequest
+        // 如果我们无法通过 transformRequest 加载 url，让其他中间件处理
         return next()
       }
       return next(e)
@@ -289,6 +325,7 @@ export function transformMiddleware(
     next()
   }
 
+  // 用于生成警告消息的辅助函数
   function warnAboutExplicitPublicPathInUrl(url: string) {
     let warning: string
 

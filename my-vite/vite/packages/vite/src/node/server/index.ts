@@ -418,6 +418,8 @@ export interface ResolvedServerUrls {
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
+  debugger
+  console.log('inlineConfig', inlineConfig)
   return _createServer(inlineConfig, { hotListen: true })
 }
 
@@ -453,7 +455,7 @@ export async function _createServer(
     config.cacheDir,
   )
 
-  const middlewares = connect() as Connect.Server
+  const middlewares = connect() as Connect.Server  // 第三方库 connect 的实例
   const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)

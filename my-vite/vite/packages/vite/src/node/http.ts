@@ -171,7 +171,7 @@ export async function httpServerStart(
     httpServer.on('error', onError)
 
     httpServer.listen(port, host, () => {
-      console.log('启动2')
+      console.log(`vite develop server running in ${host}:${port}`)
       httpServer.removeListener('error', onError)
       resolve(port)
     })
