@@ -271,6 +271,30 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
+/**
+ * 这段代码定义了一个用于判断请求是否为 JavaScript 相关请求的函数 `isJSRequest`。让我用中文解释其主要功能:
+
+1. 首先定义了一个正则表达式 `knownJsSrcRE`，用于匹配以下文件扩展名:
+   - `.js`, `.jsx` - JavaScript 文件
+   - `.ts`, `.tsx` - TypeScript 文件 
+   - `.mjs`, `.mts` - ES 模块文件
+   - `.vue` - Vue 单文件组件
+   - `.marko` - Marko 模板
+   - `.svelte` - Svelte 组件
+   - `.astro` - Astro 组件
+   - `.imba` - Imba 文件
+   - `.mdx` - MDX 文档
+
+2. `isJSRequest` 函数接收一个 URL 字符串参数,返回布尔值判断是否为 JS 相关请求:
+
+3. 判断逻辑如下:
+   - 先通过 `cleanUrl` 清理 URL (移除查询参数等)
+   - 如果 URL 匹配上述正则表达式,返回 `true`
+   - 如果 URL 没有文件扩展名且不以 `/` 结尾,也返回 `true` (可能是一个模块名)
+   - 其他情况返回 `false`
+
+这个函数在 Vite 中用于识别需要进行 JavaScript 相关处理的请求,比如需要进行转译、打包等操作的文件。
+ */
 const knownJsSrcRE =
   /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {

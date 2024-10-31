@@ -45,6 +45,7 @@ export function isPrimitive(value: unknown): boolean {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
 }
 
+// 添加尾部斜杠
 export function withTrailingSlash(path: string): string {
   if (path[path.length - 1] !== '/') {
     return `${path}/`

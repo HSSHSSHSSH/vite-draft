@@ -85,10 +85,14 @@ export function transformMiddleware(
   // check if public dir is inside root dir
   // 检查 public 目录是否在根目录内
   const { root, publicDir } = server.config
+  console.log('root', root)
+  console.log('publicDir', publicDir)
+  console.log('withTrailingSlash(root)', withTrailingSlash(root))
   const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
+  console.log('publicDirInRoot', publicDirInRoot)
   // 计算相对于根目录的 public 路径
   const publicPath = `${publicDir.slice(root.length)}/`
-
+  console.log('publicPath', publicPath)
   return async function viteTransformMiddleware(req, res, next) {
     // 获取默认的客户端环境实例
     const environment = server.environments.client
@@ -187,7 +191,7 @@ export function transformMiddleware(
       ) {
         return
       }
-
+      console.log('url', url)
       // 处理各种类型的请求
       if (
         isJSRequest(url) ||
@@ -229,7 +233,7 @@ export function transformMiddleware(
             return res.end()
           }
         }
-
+        console.log('url222', url)
         // resolve, load and transform using the plugin container
         // 使用插件容器解析、加载和转换
         const result = await transformRequest(environment, url, {

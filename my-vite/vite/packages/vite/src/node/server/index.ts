@@ -419,7 +419,6 @@ export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   debugger
-  console.log('inlineConfig', inlineConfig)
   return _createServer(inlineConfig, { hotListen: true })
 }
 

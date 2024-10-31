@@ -75,6 +75,7 @@ export function transformRequest(
     options = { ...options, ssr: environment.config.consumer === 'server' }
   }
 
+  // 如果服务器正在关闭且配置为可恢复,则抛出错误
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
@@ -100,23 +101,43 @@ export function transformRequest(
   //
   // We save the timestamp when we start processing and compare it with the
   // last time this module is invalidated
+    // 在处理模块时,该模块可能会失效。例如,当发现缺少依赖项时,
+  // 需要重新处理预打包的依赖项并进行完整页面重载。我们保存当前时间,
+  // 并与最后一次失效时间进行比较,以判断是否应该缓存转换结果,
+  // 或者将其视为过期而丢弃。
+  //
+  // 模块可能因以下原因失效:
+  // 1. 由于发现新的依赖项而进行预打包导致的完整重载
+  // 2. 配置更改后的完整重载
+  // 3. 生成该模块的文件发生变化
+  // 4. 虚拟模块的失效
+  //
+  // 对于情况1和2,在失效后会作为浏览器重载页面的一部分发出对该模块的新请求。
+  // 对于情况3和4,由于HMR(热模块替换)的处理,可能不会立即发出新请求。
+  // 在所有情况下,下次请求该模块时都应该重新处理。
+  //
+  // 我们保存开始处理时的时间戳,并与该模块最后一次失效的时间进行比较
   const timestamp = Date.now()
 
+  // 检查是否有待处理的请求
   const pending = environment._pendingRequests.get(cacheKey)
+  console.log('pending', pending)
   if (pending) {
     return environment.moduleGraph
       .getModuleByUrl(removeTimestampQuery(url))
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
           // The pending request is still valid, we can safely reuse its result
+          // 待处理的请求仍然有效,我们可以安全地重用其结果
           return pending.request
         } else {
           // Request 1 for module A     (pending.timestamp)
           // Invalidate module A        (module.lastInvalidationTimestamp)
           // Request 2 for module A     (timestamp)
-
+          
           // First request has been invalidated, abort it to clear the cache,
           // then perform a new doTransform.
+          // 第一个请求已失效,中止它以清除缓存,然后执行新的doTransform。
           pending.abort()
           return transformRequest(environment, url, options)
         }
