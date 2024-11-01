@@ -8,9 +8,17 @@ const viteDistPath = path.resolve(__dirname, '../vite/packages/vite/dist');
 
 let viteProcess = null;
 
-function startVite() {
+// 添加延迟函数
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 修改为异步函数
+async function startVite() {
   if (viteProcess) {
     viteProcess.kill();
+    // 添加 1 秒延迟，确保端口被释放
+    await delay(1000);
   }
   console.log('启动 Vite...');
   viteProcess = spawn('node', [viteBinPath], { stdio: 'inherit' });
@@ -22,16 +30,19 @@ function watchViteDist() {
     persistent: true
   });
 
-  watcher.on('change', (path) => {
+  watcher.on('change', async (path) => {
     console.log(`检测到文件变化: ${path}`);
-    startVite();
+    await startVite();  // 使用 await 等待启动完成
   });
 
   console.log(`正在监听 ${viteDistPath} 的变化...`);
 }
 
-startVite();
-watchViteDist();
+// 修改为异步调用
+(async () => {
+  await startVite();
+  watchViteDist();
+})();
 
 process.on('SIGINT', () => {
   if (viteProcess) {

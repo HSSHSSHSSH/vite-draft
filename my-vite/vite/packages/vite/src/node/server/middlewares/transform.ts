@@ -191,7 +191,7 @@ export function transformMiddleware(
       ) {
         return
       }
-      console.log('url', url)
+      console.log('url', url, 'jsRequest', isJSRequest(url), 'importReq', isImportRequest(url), 'cssReq', isCSSRequest(url),'htmlProxyReq', isHTMLProxy(url))
       // 处理各种类型的请求
       if (
         isJSRequest(url) ||

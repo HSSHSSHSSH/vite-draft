@@ -123,6 +123,7 @@ export function transformRequest(
   const pending = environment._pendingRequests.get(cacheKey)
   console.log('pending', pending)
   if (pending) {
+    // 以下代码可避免多次请求统一模块导致的模块重复转换
     return environment.moduleGraph
       .getModuleByUrl(removeTimestampQuery(url))
       .then((module) => {
@@ -147,6 +148,7 @@ export function transformRequest(
   const request = doTransform(environment, url, options, timestamp)
 
   // Avoid clearing the cache of future requests if aborted
+  
   let cleared = false
   const clearCache = () => {
     if (!cleared) {
@@ -172,6 +174,7 @@ async function doTransform(
   timestamp: number,
 ) {
   url = removeTimestampQuery(url)
+  console.log('doTransform', url)
 
   const { pluginContainer } = environment
 
@@ -193,8 +196,14 @@ async function doTransform(
 
   // resolve
   const id = module?.id ?? resolved?.id ?? url
-
+  console.log('id', id)
   module ??= environment.moduleGraph.getModuleById(id)
+  console.log('module', module)
+  /** 以上代码等价于
+   * if (module === null || module === undefined) {
+       module = environment.moduleGraph.getModuleById(id)
+    }
+   */ 
   if (module) {
     // if a different url maps to an existing loaded id,  make sure we relate this url to the id
     await environment.moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
@@ -207,7 +216,6 @@ async function doTransform(
     )
     if (cached) return cached
   }
-
   const result = loadAndTransform(
     environment,
     id,

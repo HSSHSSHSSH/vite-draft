@@ -318,3 +318,46 @@ middlewares.use(errorMiddleware(server, !!middlewareMode))
 
 #### 核心中间件 transformMiddleware
 
+#### 首次请求的简易流程
+
+在首次请求时的流程是这样的:
+
+1. 首先浏览器请求 HTML 页面
+2. 请求经过 `transformMiddleware` 但因为是 HTML 请求所以会 pass through
+3. 最终由 `indexHtmlMiddleware` 处理,在返回的 HTML 中注入 `/@vite/client` 脚本标签
+4. 浏览器收到 HTML 后,解析到 `/@vite/client` 脚本标签
+5. 浏览器发起第二个请求获取 `/@vite/client` 
+6. 这第二个请求才会被 `transformMiddleware` 处理
+
+让我们看下相关代码:
+
+```typescript:vite/src/node/server/middlewares/transform.ts
+export function transformMiddleware(
+  server: ViteDevServer,
+): Connect.NextHandleFunction {
+  return async function viteTransformMiddleware(req, res, next) {
+    if (req.method !== 'GET') {
+      return next()
+    }
+
+    // 处理 /@vite/client 请求
+    if (req.url?.startsWith('/@vite/client')) {
+      const clientCode = await server.transformRequest(req.url)
+      return send(req, res, clientCode.code, 'js')
+    }
+
+    // ... 处理其他请求 ...
+    next()
+  }
+}
+```
+
+所以:
+
+1. 首次请求时 `transformMiddleware` 中不会有 `/@vite/client` 的引用
+2. 只有在浏览器解析 HTML 后发起的第二个请求中,才会处理 `/@vite/client`
+3. 这是一个串行的过程:HTML 注入 -> 浏览器解析 -> 请求客户端脚本 -> 转换中间件处理
+
+这种设计使得职责分明:
+- `indexHtmlMiddleware` 负责注入客户端脚本标签
+- `transformMiddleware` 负责处理具体的脚本请求
